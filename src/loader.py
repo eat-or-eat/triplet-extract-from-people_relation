@@ -3,6 +3,16 @@ import json
 import pandas as pd
 from torch.utils.data import DataLoader
 
+"""
+数据格式：
+(头实体，关系，尾实体，句子)->
+# 一条数据举例
+(
+[seq_id1, seq_id12, ..., seq_idn, pad],
+[rel_id],
+[seq_label1, seq_label2, ..., seq_labeln, pad]
+)
+"""
 
 def load_vocab(vocab_path):
     vocab_dict = {}
@@ -14,7 +24,7 @@ def load_vocab(vocab_path):
 
 
 def load_schema(path):
-    with open(path, encoding="utf8") as f:
+    with open(path, encoding='utf8') as f:
         return json.load(f)
 
 
@@ -27,17 +37,17 @@ class DataGenerator:
         self.data = []
         self.sentences = []
         self.config = config
-        self.vocab = load_vocab(config["vocab_path"])
-        self.bio_schema = {"B_object1": 0,
-                           "I_object1": 1,
-                           "B_object2": 2,
-                           "I_object2": 3,
-                           "O": 4}
-        self.rel_schema = json.load(open(config["rel-schema_path"], encoding="utf8"))
-        self.config["vocab_size"] = len(self.vocab)
-        self.config["bio_size"] = len(self.bio_schema)
-        self.config["rel_size"] = len(self.rel_schema)
-        self.max_length = config["max_length"]
+        self.vocab = load_vocab(config['vocab_path'])
+        self.bio_schema = {'B_object1': 0,
+                           'I_object1': 1,
+                           'B_object2': 2,
+                           'I_object2': 3,
+                           'O': 4}
+        self.rel_schema = json.load(open(config['rel-schema_path'], encoding='utf8'))
+        self.config['vocab_size'] = len(self.vocab)
+        self.config['bio_size'] = len(self.bio_schema)
+        self.config['rel_size'] = len(self.rel_schema)
+        self.max_length = config['max_length']
         self.load()
 
     def load(self):
@@ -66,28 +76,28 @@ class DataGenerator:
     def encode_sentence(self, sentence, padding=False):
         input_id = []
         for char in sentence:
-            input_id.append(self.vocab.get(char, self.vocab["[UNK]"]))
+            input_id.append(self.vocab.get(char, self.vocab['[UNK]']))
         if padding:
             input_id = self.padding(input_id)
         return input_id
 
     def padding(self, input_id, pad_token=0):
-        input_id = input_id[:self.config["max_length"]]
-        input_id += [pad_token] * (self.config["max_length"] - len(input_id))
+        input_id = input_id[:self.config['max_length']]
+        input_id += [pad_token] * (self.config['max_length'] - len(input_id))
         return input_id
 
     def generate_bios(self, o1, o2, sentence):
         o1_s = sentence.index(o1)
         o2_s = sentence.index(o2)
-        labels = [self.bio_schema["O"]] * len(sentence)
+        labels = [self.bio_schema['O']] * len(sentence)
         # 标记实体1
-        labels[o1_s] = self.bio_schema["B_object1"]
+        labels[o1_s] = self.bio_schema['B_object1']
         for index in range(o1_s + 1, o1_s + len(o1)):
-            labels[index] = self.bio_schema["I_object1"]
+            labels[index] = self.bio_schema['I_object1']
         # 标记实体2
-        labels[o2_s] = self.bio_schema["B_object2"]
+        labels[o2_s] = self.bio_schema['B_object2']
         for index in range(o2_s + 1, o2_s + len(o2)):
-            labels[index] = self.bio_schema["I_object2"]
+            labels[index] = self.bio_schema['I_object2']
         return labels
 
     def __len__(self):
@@ -99,18 +109,19 @@ class DataGenerator:
 
 def load_dataset(config, shuffle=True):
     dg = DataGenerator(config)
-    dl = DataLoader(dg, batch_size=config["batch_size"], shuffle=shuffle)
+    dl = DataLoader(dg, batch_size=config['batch_size'], shuffle=shuffle)
     return dl
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import sys
 
-    sys.path.append("..")
+    sys.path.append('..')
     from config import config
 
     config['data_path'] = '../data/人物关系表.xlsx'
     config['vocab_path'] = '../data/vocab.txt'
     config['rel-schema_path'] = '../data/rel_dict.json'
 
+    dg = DataGenerator(config)
     dl = load_dataset(config)

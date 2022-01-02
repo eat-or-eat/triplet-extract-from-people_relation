@@ -1,6 +1,5 @@
 matplotlib==3.3.4
 numpy==1.20.1
 pandas==1.2.4
-pytorch_crf==0.7.2
 torch==1.8.2+cu111
-torchcrf==1.1.0
+transformers==4.14.1

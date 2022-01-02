@@ -1,29 +1,31 @@
 import torch
 import re
 import json
-import numpy as np
-from collections import defaultdict
 from config import config
 from src.model import Model
 
+"""
+预测脚本
+"""
 
 class SentenceLabel:
     def __init__(self, config, model_path):
         self.config = config
-        self.bio_schema = {"B_object1": 0,
-                           "I_object1": 1,
-                           "B_object2": 2,
-                           "I_object2": 3,
-                           "O": 4}
-        self.rel_schema = json.load(open(config["rel-schema_path"], encoding="utf8"))
+        self.config['model_type'] = 'lstm'
+        self.bio_schema = {'B_object1': 0,
+                           'I_object1': 1,
+                           'B_object2': 2,
+                           'I_object2': 3,
+                           'O': 4}
+        self.rel_schema = json.load(open(config['rel-schema_path'], encoding='utf8'))
         self.index_to_label = dict((y, x) for x, y in self.rel_schema.items())
-        self.config["bio_size"] = len(self.bio_schema)
-        self.config["rel_size"] = len(self.rel_schema)
-        self.vocab = self.load_vocab(config["vocab_path"])
+        self.config['bio_size'] = len(self.bio_schema)
+        self.config['rel_size'] = len(self.rel_schema)
+        self.vocab = self.load_vocab(config['vocab_path'])
         self.model = Model(config)
         self.model.load_state_dict(torch.load(model_path))
         self.model.eval()
-        print("模型加载完毕!")
+        print('模型加载完毕!')
 
     # 加载字表或词表
     def load_vocab(self, vocab_path):
@@ -37,9 +39,9 @@ class SentenceLabel:
 
     def decode(self, attribute_label, bio_label, context):
         pred_attribute = self.index_to_label[int(attribute_label)]
-        bio_label = "".join([str(i) for i in bio_label.detach().tolist()])
-        pred_obj = self.seek_pattern("01*", bio_label, context)
-        pred_value = self.seek_pattern("23*", bio_label, context)
+        bio_label = ''.join([str(i) for i in bio_label.detach().tolist()])
+        pred_obj = self.seek_pattern('01*', bio_label, context)
+        pred_value = self.seek_pattern('23*', bio_label, context)
         return pred_obj, pred_attribute, pred_value
 
     def seek_pattern(self, pattern, pred_label, context):
@@ -64,12 +66,12 @@ class SentenceLabel:
 
 
 if __name__ == "__main__":
-    sl = SentenceLabel(config, config['model_path'] + "epoch_15.pth")
+    sl = SentenceLabel(config, config['model_path'] + "epoch_30.pth")
 
-    sentence = "4、徐天明，男，31岁，他跟陈爱华、金民哲同为大学同学。"
+    sentence = "皮特帕克扮演的蜘蛛侠，他的合作搭档格温斯黛西扮演的蜘蛛侠女友"
     res = sl.predict(sentence)
     print(res)
 
-    sentence = "张三的朋友是李四"
+    sentence = "如戊戌政变中，名旦余玉琴、田际云等倾向维新变法，为光绪帝传递消息。"
     res = sl.predict(sentence)
     print(res)

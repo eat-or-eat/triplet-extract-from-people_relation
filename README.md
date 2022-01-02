@@ -1,16 +1,58 @@
-# triplet-extract-from-people_relation
-
-一个简单的三元组数据的抽取任务，数据来源于其他github大神整理的人物关系数据
-
-TODO
+# 基于lstm与bert的联合训练三元组抽抽取任务
 
 ---
 
 - [X]  基本baseline -21/12/22
-- [ ]  模型调参优化，生成训练过程以及结果展示文件
-- [ ]  上线到自己的云服务器测试
+- [X]  模型调参优化，生成训练过程以及结果展示文件 -12/1/3
 
-## 一，使用项目
+# 一，项目介绍
+
+数据来源:[这个项目中的人物关系表.xlsx和rel_dict.json](https://github.com/percent4/people_relation_extract/tree/master/data)
+
+## 1，原理
+
+三元组抽取有开放式和封闭式两种，这次任务中因为要实际应用，选取封闭式联合训练的抽取方式，有两个训练任务，分别为关系分类预测和头尾实体抽取（序列标注）。通过使用lstm与bert两个模型的超参数搜索得到任务结果
+
+## 2.项目结构
+
+```bash
+│  config.py  # 配置文件
+│  main.py  # 训练主函数
+│  predict.py  # 预测函数，能直接用lstm的模型，上传到github了
+│  requirements.txt
+│
+├─bert-base-chinese  # hugging face开源的bert
+│      config.json
+│      pytorch_model.bin
+│      vocab.txt
+│
+├─data
+│      rel_dict.json  # 关系分类的schema
+│      vocab.txt  # bert的vocab
+│      人物关系表.xlsx  # 任务关系三元组数据，这个数据质量比较低，所以最终分类效果很差
+│
+├─output
+│  └─model
+│          epoch_30.pth  # 已上传的lstm模型，可以直接使用，作用是抽取两个人之间关系
+│          report-model-0.01-0.006-0.xxx.png  # 超参数搜索后的最优lstm与bert训练图
+│
+├─src
+│  │  evaluator.py  # 评估类，包括统计准确率，打印内容，画图等功能
+│  │  loader.py  # 数据加载类
+│  │  model.py  # 模型定义类
+```
+
+## 3.训练结果图示
+
+> lstm
+
+![](output/model/report-lstm-0.01-0.006-0.117784.png)
+
+> bert
+
+![](output/model/report-bert-0.001-0.006-0.125773.png)
+
+## 二，使用项目
 
 环境：
 
@@ -18,8 +60,8 @@ TODO
 matplotlib==3.3.4
 numpy==1.20.1
 pandas==1.2.4
-pytorch_crf==0.7.2
 torch==1.8.2+cu111
+transformers==4.14.1
 ```
 
 ## 1.下载
@@ -32,8 +74,6 @@ torch==1.8.2+cu111
 处理成如下的xlsx文件，或者根据自己的三元组数据集修改src.loader中的读取部分代码
 
 ```
-
-
 
 
 | 人物1  | 人物2  | 关系 | 文本                                                           |
@@ -66,34 +106,7 @@ torch==1.8.2+cu111
 
 ```bash
 模型加载完毕!
-('徐天明', 'unknown', '金民哲')
-('张三', 'unknown', '李四')
+('帕克', '师生', '')
+('田际云', '师生', '余玉琴')
 
 ```
-
-# 二，项目介绍
-
-```bash
- │  config.py 
-│  main.py
-│  predict.py  # 预测部分代码
-│  README.md
-│  requirements.txt
-│
-├─data
-│      rel_dict.json  # 关系的scheme
-│      vocab.txt  # bert-chese的词表，后面有空试下bert，效果应该会提升很多
-│      人物关系表.xlsx  # 最下面数据集链接获取的数据
-│
-├─output
-│  └─model
-│          epoch_15.pth
-│          epoch_35.pth
-│
-├─src
-│  │  evaluator.py  # 测试脚本
-│  │  loader.py  # 加载数据脚本
-│  │  model.py  # 模型结构
-```
-
-数据来源:[这个项目中的人物关系表.xlsx和rel_dict.json](https://github.com/percent4/people_relation_extract/tree/master/data)
